@@ -1,5 +1,13 @@
-NFS
-	• Typical NFS setup: server that exports a directory and any number of clients
+#Added by JankeeMunkey on 6.17.2020
+#This guide is not finished by any stretch, this is only the beginning
+#Some example features that would be super beneficial to the community if someone took the time to add:
+##File system permission granularity, the guide assumes wide open access. This is unacceptable from a security standpoint. This can mean filesystem ACLS or locking down via IP or user
+##Taking into consideration properly opening up the host firewall and setting correct SELinux context
+
+---
+
+NFS Overview
+	• Typical NFS setup: server that exports a directory and any number of clients connect to it for file services
 Root_Squash (mount option)
 	• by default, NFS shares change the root user to the nfsnobody user, an unprivileged user account. 
 	• All root-created files are owned by nfsnobody, which prevents uploading of programs with the SUID bit set
@@ -7,52 +15,50 @@ Root_Squash (mount option)
 	• if no_root_squash is used, remote root users are able to change any file on the shared file system and leave trojaned applications for other users to inadvertently execute
 	• Should NEVER use no_root_squash unless draconian circumstances arise.
 
-Setting up the NFS Server
-	1. verify nfs-utils package is installed
-	2. make the mount point directory
-		a. ex- mkdir /nfs
-	3. give open access to the mount point
-		a. ex- chmod 777 /nfs
-	4. edit the /etc/exports file with nfs entry
+---
 
-		○ /etc/exports format- 
-			§ mountpoint who has permission to the share what can be performed
-			§ ex- /nfs *(rw)
-				□ additional mount options- ro, no_root_squash
-	5. start the nfs export services
-		a. ex- systemctl start {rpcbind, nfs-server,rpc-statd,nfs-idmapd}
-	6. perform the nfs export
-		a. exportfs -a
-	7. verify the export is mounted
-		a. showmount -e localhost
+Setting up the NFS Server
+1. verify nfs-utils package is installed
+2. make the mount point directory
+	a. ex- mkdir /nfs
+3. give open access to the mount point
+	a. ex- chmod 777 /nfs
+4. edit the /etc/exports file with an nfs entry:
+	a. /etc/exports format- 
+		§ mountpoint who has permission to the share what can be performed
+		§ ex- /nfs *(rw)
+			□ additional mount options- ro, no_root_squash
+5. start the nfs export services
+	a. ex1- systemctl start {rpcbind, nfs-server,rpc-statd,nfs-idmapd}
+	b. ex2- systemctl enable {rpcbind, nfs-server,rpc-statd,nfs-idmapd}
+6. perform the nfs export
+	a. exportfs -a
+7. verify the export is mounted
+	a. showmount -e localhost
+
+---
 
 Setting up the NFS Client
 
-• From CentOS:
-
-	○ 
-	○ to mount run mount -t nfs -o initr, tcp, hard A000NQM.radiustoday.com:/path/to/remote folder /path/to/local/folder
-	○ 
-	○ to mount in the fstab file, follow the convention:
-	○ 
-
-
-
-
-Performing the Client NFS Mount
-	1. verify nfs-utils package is installed and that rpcbind is started/enabled
-	
-	
-	2. create the mount point directory
-	3. start nfs client service
-		a. systemctl start rpcbind
-	4. verify the mount is available from the client
-		a. For this to work, you will need to be able to access nfs over the network
-		b. showmount -e <Server IP>
-	5. mount -t nfs <Server IP>:<Server Path>
-		a. 
-	6. Make mount persistent
-		a. 
-		b. 
-
-
+1. verify nfs-utils package is installed and that rpcbind is started/enabled
+	a. yum list nfs-utils rpcbind
+2. start nfs client service
+	a. systemctl start rpcbind
+3. create the mount point directory
+	a. mkdir /mnt/nfs
+4. start nfs client service
+	a. systemctl start rpcbind
+	b. systemctl enable rpcbind
+5. verify the mount is available from the client
+	a. Verify that NFS TCP and/or UDP is open on the network
+	b. showmount -e <Server IP>
+6. Perform the client side NFS mount
+	a.  mount -t nfs <Server IP>:<NFS Export Path>
+		§ There are mount options that may be attractive for more specific use cases. go to the following URL to review them:
+		§ https://www.thegeekdiary.com/common-nfs-mount-options-in-linux/
+7. (Optional) Make mount persistent
+	a. open /etc/fstab
+	b. <Server IP>:<NFS Export Path> <local mount path> nfs <mount options> 0 0
+		§ There are mount options that may be attractive for more specific use cases. go to the following URL to review them:
+		§ https://www.systutorials.com/docs/linux/man/5-nfs/
+	c. PROTIP: This step can be swapped with Step 6. By starting with adding to the fstab file, you can them run mount -a for the OS to scan the fstab and mount any paths not actively mounted
