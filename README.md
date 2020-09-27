@@ -1,1 +1,1 @@
-# Writeups for any CTF, HTB or any other Security related topic!!!!
+# Writeups for any CTF, HTB or any other Security related topic!!!
